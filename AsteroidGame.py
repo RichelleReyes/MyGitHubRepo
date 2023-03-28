@@ -1,6 +1,5 @@
 import pygame
 import random
-import math
 
 # Initialize Pygame
 pygame.init()
@@ -11,10 +10,14 @@ screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Asteroids")
 
-# Load the player, asteroid, and bullet images
+# Load the images
 player_image = pygame.image.load("assets/player.png").convert_alpha()
 asteroid_image = pygame.image.load("assets/asteroid.png").convert_alpha()
 bullet_image = pygame.image.load("assets/bullet.png").convert_alpha()
+
+# Load the sounds
+shoot_sound = pygame.mixer.Sound("assets/shoot.wav")
+explosion_sound = pygame.mixer.Sound("assets/explosion.wav")
 
 # Set the size of the player, asteroid, and bullet images
 player_size = (50, 50)
@@ -40,7 +43,7 @@ while game_running:
 
     # Handle events
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_q):
             game_running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and not game_over:
@@ -48,6 +51,7 @@ while game_running:
                 bullet_rect.centerx = player_rect.centerx
                 bullet_rect.centery = player_rect.centery
                 bullet_list.append(bullet_rect)
+                shoot_sound.play()
             elif event.key == pygame.K_RETURN and game_over:
                 # Reset the game state
                 player_rect.centerx = screen_width / 2
@@ -59,13 +63,13 @@ while game_running:
 
     # Handle keyboard input
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
+    if keys[pygame.K_LEFT] and player_rect.left > 0:
         player_rect.move_ip(-5, 0)
-    if keys[pygame.K_RIGHT]:
+    if keys[pygame.K_RIGHT] and player_rect.right < screen_width:
         player_rect.move_ip(5, 0)
-    if keys[pygame.K_UP]:
+    if keys[pygame.K_UP] and player_rect.top > 0:
         player_rect.move_ip(0, -5)
-    if keys[pygame.K_DOWN]:
+    if keys[pygame.K_DOWN] and player_rect.bottom < screen_height:
         player_rect.move_ip(0, 5)
 
     # Spawn new asteroids
@@ -87,6 +91,7 @@ while game_running:
                 asteroid_list.remove(asteroid_rect)
                 bullet_list.remove(bullet_rect)
                 score += 10
+                explosion_sound.play()
 
     # Move the bullets
     for bullet_rect in bullet_list:
@@ -116,9 +121,10 @@ while game_running:
         screen.blit(text, (screen_width/2 - text.get_width()/2, screen_height/2))
 
         font = pygame.font.Font(None, 24)
-        text = font.render("Press Enter to Play Again", True, (255, 255, 255))
+        text = font.render("Press Enter to Play Again or Q to Quit", True, (255, 255, 255))
         screen.blit(text, (screen_width/2 - text.get_width()/2, screen_height/2 + text.get_height()))
-
+        explosion_sound.play()
+                    
     # Update the display and limit the frame rate
     pygame.display.update()
     clock.tick(60)
