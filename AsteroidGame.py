@@ -35,6 +35,7 @@ bullet_list = []
 game_running = True
 clock = pygame.time.Clock()
 score = 0
+game_over = False
 while game_running:
 
     # Handle events
@@ -42,11 +43,19 @@ while game_running:
         if event.type == pygame.QUIT:
             game_running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE and not game_over:
                 bullet_rect = bullet_image.get_rect()
                 bullet_rect.centerx = player_rect.centerx
                 bullet_rect.centery = player_rect.centery
                 bullet_list.append(bullet_rect)
+            elif event.key == pygame.K_RETURN and game_over:
+                # Reset the game state
+                player_rect.centerx = screen_width / 2
+                player_rect.centery = screen_height / 2
+                asteroid_list = []
+                bullet_list = []
+                score = 0
+                game_over = False
 
     # Handle keyboard input
     keys = pygame.key.get_pressed()
@@ -60,7 +69,7 @@ while game_running:
         player_rect.move_ip(0, 5)
 
     # Spawn new asteroids
-    if random.randint(1, 50) == 1:
+    if random.randint(1, 50) == 1 and not game_over:
         asteroid_rect = asteroid_image.get_rect()
         asteroid_rect.centerx = random.randint(0, screen_width)
         asteroid_rect.centery = -50
@@ -72,31 +81,46 @@ while game_running:
         if asteroid_rect.centery > screen_height + 50:
             asteroid_list.remove(asteroid_rect)
         if asteroid_rect.colliderect(player_rect):
-            game_running = False
+            game_over = True
         for bullet_rect in bullet_list:
             if asteroid_rect.colliderect(bullet_rect):
                 asteroid_list.remove(asteroid_rect)
                 bullet_list.remove(bullet_rect)
                 score += 10
 
+    # Move the bullets
     for bullet_rect in bullet_list:
         bullet_rect.move_ip(0, -10)
         if bullet_rect.centery < -50:
             bullet_list.remove(bullet_rect)
 
-    # Draw game objects
+    # Draw the game objects
     screen.fill((0, 0, 0))
     screen.blit(player_image, player_rect)
     for asteroid_rect in asteroid_list:
         screen.blit(asteroid_image, asteroid_rect)
     for bullet_rect in bullet_list:
         screen.blit(bullet_image, bullet_rect)
-    font = pygame.font.SysFont(None, 30)
-    text = font.render("Score: " + str(score),True, (255, 255, 255))
-    screen.blit(text, (10, 10))
+
+    # Draw the score and game over message
+    if not game_over:
+        font = pygame.font.Font(None, 36)
+        text = font.render("Score: " + str(score), True, (255, 255, 255))
+        screen.blit(text, (10, 10))
+    else:
+        font = pygame.font.Font(None, 72)
+        text = font.render("Game Over", True, (255, 0, 0))
+        screen.blit(text, (screen_width/2 - text.get_width()/2, screen_height/2 - text.get_height()))
+        font = pygame.font.Font(None, 36)
+        text = font.render("Score: " + str(score), True, (255, 255, 255))
+        screen.blit(text, (screen_width/2 - text.get_width()/2, screen_height/2))
+
+        font = pygame.font.Font(None, 24)
+        text = font.render("Press Enter to Play Again", True, (255, 255, 255))
+        screen.blit(text, (screen_width/2 - text.get_width()/2, screen_height/2 + text.get_height()))
 
     # Update the display and limit the frame rate
     pygame.display.update()
     clock.tick(60)
-    
+
 pygame.quit()
